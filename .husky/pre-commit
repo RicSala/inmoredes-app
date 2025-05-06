@@ -1,10 +1,7 @@
 echo "[🐶] Checking your code"   
 
 # Prettify code
-# pnpm format
-
-# Check the types
-# npm run type:check
+pnpm format
 
 # Type check
 pnpm type:check
