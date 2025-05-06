@@ -37,7 +37,7 @@ export async function GET(_request: Request) {
 
 const logger = createLogger('message-check');
 
-export const checkBirthdays = async () => {
+const checkBirthdays = async () => {
   const contacts = await contactService.getContactsWithBirthdayToday();
 
   contacts.forEach((contact) => {
