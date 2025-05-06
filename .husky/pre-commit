@@ -1,0 +1,15 @@
+echo "[🐶] Checking your code"   
+
+# Prettify code
+# pnpm format
+
+# Check the types
+# npm run type:check
+
+# Type check
+pnpm type:check
+
+# Run lint staged
+npx lint-staged
+
+echo "[🐶] DONE! ✅"   

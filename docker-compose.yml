@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: inmoredesapp_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Map volume to postgres data
+
+# Declare volumes
+volumes:
+  postgres_data:

@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+  // TODO: when it's stable, use the neon serverless adapter.
+  // previewFeatures = ["driverAdapters"]
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+}
+
+model Session {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+  ipAddress            String?
+  userAgent            String?
+  userId               String   @db.Uuid
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?  @db.Uuid
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId             String    @db.Uuid
+  providerId            String
+  userId                String    @db.Uuid
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @db.Timestamptz(3)
+  updatedAt  DateTime? @db.Timestamptz(3)
+
+  @@map("verification")
+}
+
+enum ContactGroup {
+  GROUP_1
+  GROUP_2
+  GROUP_3
+}
+
+model Contact {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+  name         String
+  surname      String
+  email        String
+  phone        String
+  birthday     DateTime?    @db.Date
+  purchaseDate DateTime?    @db.Date
+  group        ContactGroup
+  metadata     Json? // For future extensions
+  messages     MessageLog[]
+
+  @@unique([email])
+  @@unique([phone])
+  @@index([group])
+  @@index([birthday])
+  @@index([purchaseDate])
+}
+
+enum MessageChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  RETRY
+}
+
+enum MessageTrigger {
+  BIRTHDAY
+  ONE_MONTH_AFTER_PURCHASE
+  ONE_YEAR_AFTER_PURCHASE
+}
+
+model MessageLog {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt       DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @db.Timestamptz(3)
+  contactId       String         @db.Uuid
+  contact         Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel         MessageChannel
+  status          MessageStatus  @default(PENDING)
+  trigger         MessageTrigger
+  templateId      String
+  sentAt          DateTime?      @db.Timestamptz(3)
+  deliveredAt     DateTime?      @db.Timestamptz(3)
+  failedAt        DateTime?      @db.Timestamptz(3)
+  errorMessage    String?
+  retryCount      Int            @default(0)
+  nextRetryAt     DateTime?      @db.Timestamptz(3)
+  qstashMessageId String?
+
+  @@index([contactId])
+  @@index([status])
+  @@index([channel])
+  @@index([trigger])
+  @@index([sentAt])
+  @@index([qstashMessageId])
+}
