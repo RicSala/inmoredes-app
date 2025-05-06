@@ -1,4 +1,4 @@
-import { ContactDetailPageClient } from '@/app/contacts/[id]/ContactDetailPageClient';
+import { ContactDetailPageClient } from '@/app/app/contacts/[id]/ContactDetailPageClient';
 import { contactService } from '@/contacts/contactService';
 
 import { notFound } from 'next/navigation';
