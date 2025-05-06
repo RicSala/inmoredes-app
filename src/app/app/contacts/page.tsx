@@ -4,10 +4,13 @@ import { ContactTable } from '@/contacts/components/ContactTable/ContactTable';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
+import { PageHeading } from '@/components/PageHeading';
+
 export default async function Home() {
   const contacts = await contactService.findMany();
   return (
     <div className='flex flex-col gap-4'>
+      <PageHeading title='Contacts' description='Manage your contacts' />
       <ContactImportDialog />
       <Link
         href='/app/contacts/new'

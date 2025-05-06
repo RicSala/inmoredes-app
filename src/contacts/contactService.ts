@@ -7,9 +7,11 @@ import {
   TContactCreateInput,
 } from '@/contacts/contactSchemas';
 import { ContactQueryBuilder } from '@/contacts/queryBuilder';
-
+import { format } from 'date-fns';
+import { createLogger } from '@/logging/Logger';
 export const contactService = {
   upsert: async (contact: TContactUpsertInput): Promise<Contact> => {
+    logger.info(`Upserting contact: ${JSON.stringify(contact)}`);
     if ('id' in contact) {
       return await db.contact.update({
         where: { id: contact.id },
@@ -100,6 +102,67 @@ export const contactService = {
     });
   },
 
+  getContactsWithBirthdayOn: async (date: Date): Promise<Contact[]> => {
+    // Extract month and day using date-fns
+    const month = parseInt(format(date, 'M')); // 1-12
+    const day = parseInt(format(date, 'd')); // 1-31
+
+    // Using raw SQL for efficient querying
+    return await db.$queryRaw<Contact[]>`
+      SELECT * FROM "Contact" 
+      WHERE 
+        "birthday" IS NOT NULL AND
+        EXTRACT(MONTH FROM "birthday") = ${month} AND
+        EXTRACT(DAY FROM "birthday") = ${day}
+    `;
+  },
+
+  getContactsWithBirthdayToday: async (): Promise<Contact[]> => {
+    const today = new Date();
+    const todayAtMidnight = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    const month = parseInt(format(todayAtMidnight, 'M'));
+    const day = parseInt(format(todayAtMidnight, 'd'));
+
+    logger.info(`Getting contacts with birthday on ${month}/${day}`);
+
+    const debugResults = await db.$queryRaw`
+  SELECT 
+    name, 
+    surname, 
+    birthday, 
+    EXTRACT(MONTH FROM birthday) as extracted_month, 
+    EXTRACT(DAY FROM birthday) as extracted_day
+  FROM "Contact" 
+  WHERE 
+    name ILIKE '%ricardo%'
+`;
+
+    logger.info(`Debug query results: ${JSON.stringify(debugResults)}`);
+
+    const contacts = await db.$queryRaw<Contact[]>`
+      SELECT * FROM "Contact" 
+      WHERE 
+        "birthday" IS NOT NULL AND
+        EXTRACT(MONTH FROM "birthday") = ${month} AND
+        EXTRACT(DAY FROM "birthday") = ${day}
+    `;
+
+    logger.info(
+      `Found ${contacts.length} contacts with birthday on ${month}/${day}`
+    );
+
+    contacts.forEach((contact) => {
+      logger.info(`${contact.name} ${contact.surname}`);
+    });
+
+    return contacts;
+  },
+
   getTodaysBirthdays: async (): Promise<Contact[]> => {
     const today = new Date();
     const month = today.getMonth() + 1;
@@ -125,3 +188,5 @@ export const contactService = {
     `;
   },
 };
+
+const logger = createLogger('contactService');
